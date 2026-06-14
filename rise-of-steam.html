@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rise of Steam — Minecraft Server</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+<style>
+  :root {
+    --bg: #0D0D0D;
+    --surface: #141414;
+    --card: #1A1A1A;
+    --border: #2A2A2A;
+    --copper: #C8A84B;
+    --copper-dim: #8B6E2A;
+    --neon: #4FC3F7;
+    --rust: #A0522D;
+    --steam: rgba(200,168,75,0.08);
+    --text: #E8E0D0;
+    --muted: #7A7060;
+    --online: #4CAF50;
+    --offline: #F44336;
+    --pixel: 4px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── PIXEL BORDER UTILITY ─────────────────────────────── */
+  .pixel-border {
+    image-rendering: pixelated;
+    border: var(--pixel) solid var(--copper);
+    box-shadow: 0 0 0 var(--pixel) var(--bg), 0 0 0 calc(var(--pixel)*2) var(--copper-dim);
+  }
+
+  /* ── NAV ──────────────────────────────────────────────── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(13,13,13,0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 2px solid var(--copper-dim);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem;
+    height: 56px;
+  }
+
+  .nav-logo {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: var(--copper);
+    letter-spacing: 1px;
+    text-shadow: 0 0 12px var(--copper);
+    text-decoration: none;
+  }
+
+  .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+  .nav-links a {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 1px;
+    transition: color .2s;
+    text-transform: uppercase;
+  }
+  .nav-links a:hover { color: var(--copper); }
+
+  .nav-status {
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted);
+    animation: pulse 2s infinite;
+  }
+  .status-dot.online { background: var(--online); box-shadow: 0 0 6px var(--online); }
+  .status-dot.offline { background: var(--offline); animation: none; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .4; }
+  }
+
+  /* ── HERO ─────────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 80px 2rem 4rem;
+    overflow: hidden;
+  }
+
+  /* Gear background */
+  .gear-bg {
+    position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+  }
+  .gear {
+    position: absolute;
+    border-radius: 50%;
+    border: 6px solid;
+    opacity: .07;
+  }
+  .gear::before, .gear::after {
+    content: '';
+    position: absolute;
+    background: inherit;
+  }
+  .gear-1 {
+    width: 320px; height: 320px;
+    border-color: var(--copper);
+    top: 10%; left: -80px;
+    animation: spin 40s linear infinite;
+  }
+  .gear-2 {
+    width: 200px; height: 200px;
+    border-color: var(--copper);
+    top: 5%; right: 5%;
+    animation: spin 25s linear infinite reverse;
+  }
+  .gear-3 {
+    width: 500px; height: 500px;
+    border-color: var(--rust);
+    bottom: -100px; right: -100px;
+    animation: spin 60s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Steam particles */
+  .steam-canvas {
+    position: absolute; inset: 0; pointer-events: none;
+  }
+
+  /* pixel grid overlay */
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(200,168,75,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200,168,75,.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--copper);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    opacity: .8;
+  }
+
+  .hero-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(22px, 5vw, 48px);
+    color: var(--copper);
+    text-shadow: 4px 4px 0 var(--copper-dim), 0 0 40px rgba(200,168,75,.4);
+    line-height: 1.4;
+    margin-bottom: 1rem;
+  }
+
+  .hero-subtitle {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(9px, 1.5vw, 14px);
+    color: var(--rust);
+    text-shadow: 2px 2px 0 #5A2A0A;
+    letter-spacing: 2px;
+    margin-bottom: 2.5rem;
+  }
+
+  .hero-desc {
+    max-width: 560px;
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 3rem;
+    line-height: 1.8;
+  }
+
+  .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+
+  .btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    padding: 14px 24px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: transform .1s, box-shadow .2s;
+    position: relative;
+    image-rendering: pixelated;
+  }
+  .btn:active { transform: translate(2px, 2px); }
+
+  .btn-primary {
+    background: var(--copper);
+    color: #0D0D0D;
+    border: 4px solid var(--copper);
+    box-shadow: 4px 4px 0 var(--copper-dim);
+  }
+  .btn-primary:hover { box-shadow: 6px 6px 0 var(--copper-dim), 0 0 20px rgba(200,168,75,.3); }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--copper);
+    border: 4px solid var(--copper-dim);
+    box-shadow: 4px 4px 0 #2A2A2A;
+  }
+  .btn-outline:hover { border-color: var(--copper); box-shadow: 4px 4px 0 var(--copper-dim); }
+
+  .ip-box {
+    margin-top: 3rem;
+    display: inline-flex; align-items: center; gap: 12px;
+    background: var(--card);
+    border: 2px solid var(--border);
+    padding: 12px 20px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .ip-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; }
+  .ip-address { font-size: 18px; color: var(--copper); letter-spacing: 2px; }
+
+  .copy-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 4px 10px; cursor: pointer; font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; letter-spacing: 1px;
+    transition: all .2s;
+  }
+  .copy-btn:hover { color: var(--copper); border-color: var(--copper); }
+  .copy-btn.copied { color: var(--online); border-color: var(--online); }
+
+  /* ── SECTION COMMON ───────────────────────────────────── */
+  section { padding: 80px 2rem; }
+
+  .section-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-header {
+    margin-bottom: 3rem;
+    display: flex; align-items: center; gap: 1.5rem;
+  }
+
+  .section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--copper);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    opacity: .7;
+  }
+
+  .section-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(14px, 2.5vw, 22px);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(to right, var(--copper-dim), transparent);
+  }
+
+  /* ── SERVER STATUS BAR ────────────────────────────────── */
+  .status-bar {
+    background: var(--card);
+    border-top: 2px solid var(--border);
+    border-bottom: 2px solid var(--border);
+    padding: 20px 2rem;
+  }
+
+  .status-inner {
+    max-width: 1100px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 1.5rem;
+  }
+
+  .status-widget {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .status-icon { font-size: 20px; color: var(--copper); }
+  .status-info .label { font-size: 10px; color: var(--muted); letter-spacing: 2px; }
+  .status-info .value { font-size: 16px; color: var(--text); }
+  .status-info .value.online { color: var(--online); }
+  .status-info .value.offline { color: var(--offline); }
+
+  .player-count {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 28px;
+    color: var(--copper);
+    text-shadow: 2px 2px 0 var(--copper-dim);
+  }
+
+  .player-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 2px;
+  }
+
+  /* ── INFO GRID ────────────────────────────────────────── */
+  .info-section { background: var(--surface); }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .info-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    padding: 1.5rem;
+    position: relative;
+    transition: border-color .2s, transform .2s;
+  }
+
+  .info-card:hover {
+    border-color: var(--copper-dim);
+    transform: translateY(-2px);
+  }
+
+  .info-card::before {
+    content: '';
+    position: absolute;
+    top: -2px; left: -2px; right: -2px;
+    height: 3px;
+    background: var(--copper);
+    opacity: 0;
+    transition: opacity .2s;
+  }
+  .info-card:hover::before { opacity: 1; }
+
+  .card-icon {
+    font-size: 32px;
+    margin-bottom: 1rem;
+    display: block;
+    color: var(--copper);
+  }
+
+  .card-icon i { font-size: inherit; }
+
+  .card-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: var(--copper);
+    margin-bottom: .75rem;
+    letter-spacing: 1px;
+  }
+
+  .card-text { color: var(--muted); font-size: 13px; line-height: 1.7; }
+
+  /* mod tags */
+  .mod-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 1rem; }
+  .mod-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--copper);
+    background: rgba(200,168,75,.08);
+    border: 1px solid var(--copper-dim);
+    padding: 3px 8px;
+    letter-spacing: 1px;
+  }
+
+  /* ── FEATURED MODS ────────────────────────────────────── */
+  .mods-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .mod-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    padding: 1.25rem;
+    display: flex; align-items: flex-start; gap: 12px;
+    transition: border-color .2s;
+  }
+  .mod-card:hover { border-color: var(--copper-dim); }
+
+  .mod-emoji { font-size: 28px; flex-shrink: 0; color: var(--copper); }
+  .mod-name {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  .mod-desc { font-size: 12px; color: var(--muted); }
+
+  /* ── DYNMAP ───────────────────────────────────────────── */
+  .map-section { background: var(--bg); }
+
+  .map-wrapper {
+    position: relative;
+    width: 100%;
+    height: 600px;
+    background: var(--card);
+    border: 2px solid var(--border);
+    overflow: hidden;
+  }
+
+  .map-wrapper iframe {
+    width: 100%; height: 100%;
+    border: none;
+    filter: brightness(.9) saturate(.85);
+  }
+
+  .map-overlay-corner {
+    position: absolute;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: var(--copper);
+    background: rgba(13,13,13,.85);
+    padding: 6px 10px;
+    letter-spacing: 1px;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .map-overlay-corner.tl { top: 0; left: 0; border-right: 2px solid var(--copper-dim); border-bottom: 2px solid var(--copper-dim); }
+  .map-overlay-corner.tr { top: 0; right: 0; border-left: 2px solid var(--copper-dim); border-bottom: 2px solid var(--copper-dim); }
+
+  /* ── DOWNLOAD ─────────────────────────────────────────── */
+  .download-section { background: var(--surface); }
+
+  .download-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    max-width: 700px;
+  }
+
+  @media (max-width: 600px) {
+    .download-grid { grid-template-columns: 1fr; }
+  }
+
+  .dl-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    padding: 2rem 1.5rem;
+    text-align: center;
+    position: relative;
+    transition: border-color .2s, transform .15s;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    color: inherit;
+  }
+  .dl-card:hover {
+    border-color: var(--copper);
+    transform: translateY(-3px);
+  }
+
+  .dl-os-icon { font-size: 48px; margin-bottom: 1rem; display: block; color: var(--copper); }
+
+  .dl-os-name {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: var(--text);
+    margin-bottom: .5rem;
+  }
+
+  .dl-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--copper);
+    background: rgba(200,168,75,.1);
+    border: 1px solid var(--copper-dim);
+    padding: 3px 10px;
+    display: inline-block;
+    margin-bottom: 1.5rem;
+    letter-spacing: 1px;
+  }
+
+  .dl-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 12px;
+    background: transparent;
+    color: var(--copper);
+    border: 3px solid var(--copper-dim);
+    box-shadow: 3px 3px 0 #2A2A2A;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all .15s;
+  }
+  .dl-card:hover .dl-btn {
+    background: var(--copper);
+    color: #0D0D0D;
+    box-shadow: 3px 3px 0 var(--copper-dim);
+  }
+
+  /* ── FOOTER ───────────────────────────────────────────── */
+  footer {
+    background: var(--bg);
+    border-top: 2px solid var(--border);
+    padding: 2.5rem;
+    text-align: center;
+  }
+
+  .footer-logo {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 14px;
+    color: var(--copper);
+    text-shadow: 2px 2px 0 var(--copper-dim), 0 0 20px rgba(200,168,75,.3);
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  .footer-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* pixel corners decoration */
+  .pixel-corners {
+    position: relative;
+  }
+  .pixel-corners::before, .pixel-corners::after {
+    content: '';
+    position: absolute;
+    width: 12px; height: 12px;
+    background: var(--copper);
+    opacity: .5;
+  }
+  .pixel-corners::before { top: -2px; left: -2px; }
+  .pixel-corners::after { bottom: -2px; right: -2px; }
+
+  /* ── NOTICE TOAST ─────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--copper);
+    color: #0D0D0D;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    padding: 10px 20px;
+    z-index: 9999;
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+    letter-spacing: 1px;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--copper-dim); }
+
+  /* responsive */
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .status-inner { flex-direction: column; align-items: flex-start; }
+    .download-grid { grid-template-columns: 1fr; }
+    .map-wrapper { height: 380px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo"><i class="fa-solid fa-gear"></i> Rise of Steam</a>
+  <ul class="nav-links">
+    <li><a href="#info">O serveru</a></li>
+    <li><a href="#map">Mapa</a></li>
+    <li><a href="#download">Launcher</a></li>
+  </ul>
+  <div class="nav-status">
+    <div class="status-dot" id="navDot"></div>
+    <span id="navStatusText" style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted)">Načítám...</span>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="gear-bg">
+    <div class="gear gear-1"></div>
+    <div class="gear gear-2"></div>
+    <div class="gear gear-3"></div>
+  </div>
+  <canvas class="steam-canvas" id="steamCanvas"></canvas>
+
+  <div style="position:relative;z-index:1;">
+    <p class="hero-eyebrow"><i class="fa-solid fa-play"></i> Industriální Minecraft Server</p>
+    <h1 class="hero-title">RISE<br>OF STEAM</h1>
+    <p class="hero-subtitle">// FORGE THE FUTURE //</p>
+    <p class="hero-desc">Postav, automatizuj a dobývej. Server plný průmyslových modů kde se z ruční práce stává průmyslové impérium — Create, Mekanism, Farmer's Delight a desítky dalších.</p>
+    <div class="hero-actions">
+      <a href="#download" class="btn btn-primary"><i class="fa-solid fa-download"></i> Stáhnout Launcher</a>
+      <a href="#map" class="btn btn-outline"><i class="fa-solid fa-map"></i> Živá Mapa</a>
+    </div>
+    <div class="ip-box">
+      <div>
+        <div class="ip-label">Server IP</div>
+        <div class="ip-address" id="ipText">mc.toustik.xyz</div>
+      </div>
+      <button class="copy-btn" id="copyBtn" onclick="copyIP()">COPY</button>
+    </div>
+  </div>
+</section>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <div class="status-inner">
+    <div style="display:flex;align-items:center;gap:1rem;">
+      <div class="status-dot" id="statusDot" style="width:14px;height:14px;"></div>
+      <div>
+        <div class="status-info">
+          <div class="label">SERVER STATUS</div>
+          <div class="value" id="statusText">Načítám...</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;">
+      <div class="player-count" id="playerCount">—</div>
+      <div class="player-label">HRÁČŮ ONLINE</div>
+    </div>
+
+    <div class="status-widget">
+      <i class="fa-solid fa-signal status-icon"></i>
+      <div class="status-info">
+        <div class="label">PING</div>
+        <div class="value" id="serverPing">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INFO -->
+<section class="info-section" id="info">
+  <div class="section-inner">
+    <div class="section-header">
+      <div>
+        <div class="section-label">// O SERVERU</div>
+        <h2 class="section-title">Průmysl na maximu</h2>
+      </div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-card">
+        <span class="card-icon"><i class="fa-solid fa-gears"></i></span>
+        <div class="card-title">Create Mod</div>
+        <p class="card-text">Strojový základ serveru. Buduj konvejery, mlýny, parní stroje a plně automatizované továrny pomocí Create modu. Mechanická síla pohání vše.</p>
+        <div class="mod-tags">
+          <span class="mod-tag">COGWHEELS</span>
+          <span class="mod-tag">CONTRAPTIONS</span>
+          <span class="mod-tag">TRAINS</span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <span class="card-icon"><i class="fa-solid fa-flask"></i></span>
+        <div class="card-title">Mekanism</div>
+        <p class="card-text">Pokročilá věda a technologie. Od základní rudy po pokročilé slitiny — Mekanism přináší chemické zpracování, generátory a high-tech vybavení.</p>
+        <div class="mod-tags">
+          <span class="mod-tag">FUSION</span>
+          <span class="mod-tag">CHEMISTRY</span>
+          <span class="mod-tag">ORE x5</span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <span class="card-icon"><i class="fa-solid fa-wheat-awn"></i></span>
+        <div class="card-title">Farmer's Delight</div>
+        <p class="card-text">Průmysl potřebuje pracovníky, pracovníci potřebují jídlo. Farmer's Delight rozšiřuje zemědělství a vaření — desítky nových receptů a plodin.</p>
+        <div class="mod-tags">
+          <span class="mod-tag">COOKING</span>
+          <span class="mod-tag">CROPS</span>
+          <span class="mod-tag">COMFORT</span>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <span class="card-icon"><i class="fa-solid fa-industry"></i></span>
+        <div class="card-title">A mnoho dalšího</div>
+        <p class="card-text">Server nabízí desítky modů pro průmyslové dobrodružství. Storage systémy, energetika, doprava, průzkum a automatizace bez kompromisů.</p>
+        <div class="mod-tags">
+          <span class="mod-tag">TFMG</span>
+          <span class="mod-tag">TRAINS</span>
+          <span class="mod-tag">COBBLEMON</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:3rem;">
+      <div class="section-label" style="margin-bottom:1rem;">// HLAVNÍ MODY</div>
+      <div class="mods-row">
+        <div class="mod-card">
+          <span class="mod-emoji"><i class="fa-solid fa-gears"></i></span>
+          <div>
+            <div class="mod-name">Create</div>
+            <div class="mod-desc">Mechanická automatizace</div>
+          </div>
+        </div>
+        <div class="mod-card">
+          <span class="mod-emoji"><i class="fa-solid fa-flask"></i></span>
+          <div>
+            <div class="mod-name">Mekanism</div>
+            <div class="mod-desc">Průmyslová chemie</div>
+          </div>
+        </div>
+        <div class="mod-card">
+          <span class="mod-emoji"><i class="fa-solid fa-wheat-awn"></i></span>
+          <div>
+            <div class="mod-name">Farmer's Delight</div>
+            <div class="mod-desc">Rozšířené vaření</div>
+          </div>
+        </div>
+        <div class="mod-card">
+          <span class="mod-emoji"><i class="fa-solid fa-helmet-safety"></i></span>
+          <div>
+            <div class="mod-name">TFMG</div>
+            <div class="mod-desc">Těžba, ocel a průmysl</div>
+          </div>
+        </div>
+        <div class="mod-card">
+          <span class="mod-emoji"><i class="fa-solid fa-train"></i></span>
+          <div>
+            <div class="mod-name">Create: Steam 'n' Rails</div>
+            <div class="mod-desc">Parní lokomotívy</div>
+          </div>
+        </div>
+        <div class="mod-card">
+          <span class="mod-emoji"><i class="fa-solid fa-bolt"></i></span>
+          <div>
+            <div class="mod-name">Immersive Engineering</div>
+            <div class="mod-desc">Realistická energetika</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAP -->
+<section class="map-section" id="map">
+  <div class="section-inner">
+    <div class="section-header">
+      <div>
+        <div class="section-label">// ŽIVÁ MAPA</div>
+        <h2 class="section-title">Dynmap světa</h2>
+      </div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="map-wrapper pixel-corners">
+      <div class="map-overlay-corner tl"><i class="fa-solid fa-gear"></i> RISE OF STEAM — LIVE MAP</div>
+      <div class="map-overlay-corner tr" id="mapStatus">● LOADING</div>
+      <iframe
+        src="http://dynmap.toustik.xyz"
+        title="Rise of Steam Dynmap"
+        loading="lazy"
+        onload="document.getElementById('mapStatus').textContent='● LIVE'"
+        onerror="document.getElementById('mapStatus').textContent='● OFFLINE'">
+      </iframe>
+    </div>
+
+    <p style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:.75rem;letter-spacing:1px;">
+      ℹ Mapa se aktualizuje v reálném čase. Klikni na hráče pro zobrazení pozice.
+      <a href="http://dynmap.toustik.xyz" target="_blank" style="color:var(--copper);text-decoration:none;"> OTEVŘÍT V NOVÉM OKNĚ →</a>
+    </p>
+  </div>
+</section>
+
+<!-- DOWNLOAD -->
+<section class="download-section" id="download">
+  <div class="section-inner">
+    <div class="section-header">
+      <div>
+        <div class="section-label">// LAUNCHER</div>
+        <h2 class="section-title">Stáhnout &amp; Hrát</h2>
+      </div>
+      <div class="section-line"></div>
+    </div>
+
+    <p style="color:var(--muted);font-size:14px;margin-bottom:2.5rem;max-width:500px;line-height:1.8;">
+      Náš vlastní launcher automaticky nainstaluje všechny potřebné mody a udržuje je aktuální. Žádné ruční nastavování — stačí stáhnout a hrát.
+    </p>
+
+    <div class="download-grid">
+      <a href="#" class="dl-card" onclick="downloadOS('windows');return false;">
+        <span class="dl-os-icon"><i class="fa-brands fa-windows"></i></span>
+        <div class="dl-os-name">Windows</div>
+        <div class="dl-badge">v1.0.0 · .EXE</div>
+        <div class="dl-btn"><i class="fa-solid fa-download"></i> STÁHNOUT</div>
+      </a>
+
+      <a href="#" class="dl-card" onclick="downloadOS('linux');return false;">
+        <span class="dl-os-icon"><i class="fa-brands fa-linux"></i></span>
+        <div class="dl-os-name">Linux</div>
+        <div class="dl-badge">v1.0.0 · .APPIMAGE</div>
+        <div class="dl-btn"><i class="fa-solid fa-download"></i> STÁHNOUT</div>
+      </a>
+    </div>
+
+    <div style="margin-top:2rem;background:var(--card);border:2px solid var(--border);padding:1.25rem;max-width:700px;">
+      <p style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;line-height:1.8;">
+        ℹ <span style="color:var(--copper)">POŽADAVKY:</span> Java 17+, 4 GB RAM doporučeno, připojení k internetu.<br>
+        <i class="fa-solid fa-folder-open"></i> Launcher instaluje mody automaticky do vlastní složky — neovlivní jiné instance Minecraftu.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-logo"><i class="fa-solid fa-gear"></i> RISE OF STEAM</span>
+  <p class="footer-text">mc.toustik.xyz &nbsp;|&nbsp; Nezávislý Minecraft server &nbsp;|&nbsp; Not affiliated with Mojang</p>
+  <p style="margin-top:.5rem;font-family:'Share Tech Mono',monospace;font-size:10px;color:#444;letter-spacing:1px;">
+    CRAFT · AUTOMATE · CONQUER
+  </p>
+</footer>
+
+<!-- TOAST -->
+<div class="toast" id="toast">ZKOPÍROVÁNO!</div>
+
+<script>
+// ── STEAM PARTICLE CANVAS ─────────────────────────────
+(function() {
+  const canvas = document.getElementById('steamCanvas');
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+
+  function resize() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function Particle() {
+    this.reset = function() {
+      this.x = Math.random() * canvas.width;
+      this.y = canvas.height + 10;
+      this.size = Math.random() * 3 + 1;
+      this.speedY = Math.random() * 0.5 + 0.2;
+      this.speedX = (Math.random() - 0.5) * 0.3;
+      this.opacity = Math.random() * 0.15 + 0.03;
+      this.life = 0;
+      this.maxLife = Math.random() * 200 + 100;
+    };
+    this.reset();
+    this.y = Math.random() * canvas.height;
+    this.life = Math.random() * this.maxLife;
+  }
+
+  for (let i = 0; i < 60; i++) particles.push(new Particle());
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.life++;
+      if (p.life > p.maxLife) p.reset();
+      p.x += p.speedX;
+      p.y -= p.speedY;
+      const alpha = Math.sin((p.life / p.maxLife) * Math.PI) * p.opacity;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,168,75,${alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── COPY IP ──────────────────────────────────────────
+function copyIP() {
+  navigator.clipboard.writeText('mc.toustik.xyz').then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'COPIED!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 2000);
+    showToast('ZKOPÍROVÁNO!');
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── DOWNLOAD ─────────────────────────────────────────
+function downloadOS(os) {
+  showToast(os === 'windows' ? 'SPOUŠTÍM STAHOVÁNÍ...' : 'SPOUŠTÍM STAHOVÁNÍ...');
+  // Replace href values below with actual download links
+  // Windows: /launcher/RiseOfSteam-Setup.exe
+  // Linux:   /launcher/RiseOfSteam.AppImage
+}
+
+// ── SERVER STATUS ─────────────────────────────────────
+const MC_HOST = 'mc.toustik.xyz';
+
+// Try multiple APIs in order until one works
+const STATUS_APIS = [
+  {
+    url: () => `https://api.mcstatus.io/v2/status/java/${MC_HOST}`,
+    parse: (d) => ({
+      online: d.online === true,
+      players: d.players?.online ?? 0,
+      max: d.players?.max ?? 0,
+      version: d.version?.name_clean ?? d.version?.name ?? '?',
+    })
+  },
+  {
+    url: () => `https://api.mcsrvstat.us/3/${MC_HOST}`,
+    parse: (d) => ({
+      online: d.online === true,
+      players: d.players?.online ?? 0,
+      max: d.players?.max ?? 0,
+      version: d.version ?? '?',
+    })
+  },
+  {
+    url: () => `https://mcapi.us/server/status?ip=${MC_HOST}`,
+    parse: (d) => ({
+      online: d.status === 'online',
+      players: d.players?.now ?? 0,
+      max: d.players?.max ?? 0,
+      version: d.server?.name ?? '?',
+    })
+  }
+];
+
+function applyStatus({ online, players, max, version, pingMs }) {
+  // Nav dot
+  const navDot = document.getElementById('navDot');
+  navDot.classList.toggle('online', online);
+  navDot.classList.toggle('offline', !online);
+
+  // Nav text
+  const navText = document.getElementById('navStatusText');
+  navText.textContent = online ? `${players} hráčů online` : 'Server offline';
+  navText.style.color = online ? 'var(--online)' : 'var(--offline)';
+
+  // Status bar dot
+  const dot = document.getElementById('statusDot');
+  dot.classList.toggle('online', online);
+  dot.classList.toggle('offline', !online);
+
+  // Status text
+  const statusEl = document.getElementById('statusText');
+  statusEl.textContent = online ? 'ONLINE' : 'OFFLINE';
+  statusEl.className = 'value ' + (online ? 'online' : 'offline');
+
+  // Players
+  document.getElementById('playerCount').textContent = online ? players : '—';
+
+  // Ping
+  document.getElementById('serverPing').textContent = (online && pingMs) ? `${pingMs}ms` : '—';
+
+  // Map overlay (don't override iframe onload)
+  if (!online) document.getElementById('mapStatus').textContent = '● SERVER OFFLINE';
+}
+
+async function fetchServerStatus() {
+  for (const api of STATUS_APIS) {
+    try {
+      const start = Date.now();
+      const res = await fetch(api.url(), { signal: AbortSignal.timeout(6000) });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const pingMs = Date.now() - start;
+      const parsed = api.parse(data);
+      applyStatus({ ...parsed, pingMs });
+      return; // success, stop trying
+    } catch (_) {
+      // try next API
+    }
+  }
+  // All APIs failed
+  applyStatus({ online: false, players: 0, max: 0, version: '', pingMs: null });
+  document.getElementById('statusText').textContent = 'NEDOSTUPNÝ';
+  document.getElementById('navStatusText').textContent = 'Status nedostupný';
+}
+
+fetchServerStatus();
+setInterval(fetchServerStatus, 60000);
+</script>
+</body>
+</html>
